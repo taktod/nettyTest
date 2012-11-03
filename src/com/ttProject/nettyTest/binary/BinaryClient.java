@@ -1,9 +1,11 @@
-package com.ttProject.nettyTest.text;
+package com.ttProject.nettyTest.binary;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -12,18 +14,13 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
-import org.jboss.netty.handler.codec.frame.Delimiters;
-import org.jboss.netty.handler.codec.string.StringDecoder;
-import org.jboss.netty.handler.codec.string.StringEncoder;
 
-public class TextClient {
+public class BinaryClient {
 	public static void main(String[] args) {
-		new TextClient();
+		new BinaryClient();
 	}
-	public TextClient() {
+	public BinaryClient() {
 		int port = 12345;
-		
 		ClientBootstrap bootstrap = new ClientBootstrap(
 				new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
 		
@@ -36,7 +33,14 @@ public class TextClient {
 			bootstrap.releaseExternalResources();
 			return;
 		}
-		lastWriteFuture = channel.write("test\r\n");
+		ChannelBuffer out = ChannelBuffers.buffer(13);
+		out.writeByte((byte)0x01);
+		out.writeByte((byte)0x02);
+		out.writeByte((byte)0x03);
+		out.writeByte((byte)0x04);
+		out.writeByte((byte)0x05);
+		out.writeByte((byte)0x06);
+		lastWriteFuture = channel.write(out);
 		if(lastWriteFuture != null) {
 			lastWriteFuture.awaitUninterruptibly();
 		}
@@ -48,9 +52,6 @@ public class TextClient {
 		public ChannelPipeline getPipeline() throws Exception {
 			ChannelPipeline pipeline = Channels.pipeline();
 			
-			pipeline.addLast("framer", new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
-			pipeline.addLast("decoder", new StringDecoder());
-			pipeline.addLast("encoder", new StringEncoder());
 			pipeline.addLast("handler", new TestClientHandler());
 			return pipeline;
 		}
